@@ -7,6 +7,7 @@ from wtforms.validators import InputRequired, Email, Length
 from flask_bootstrap import Bootstrap
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from healthcheck import HealthCheck, EnvironmentDump
 
 app = Flask(__name__)
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://username:password@host/database'
