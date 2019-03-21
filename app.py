@@ -14,6 +14,8 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://noor:Nurzhamal@165.227.110.208/noor'
 bootstrap = Bootstrap(app)
 db = SQLAlchemy(app)
+health = HealthCheck(app, "/healthy")
+envdump = EnvironmentDump(app, "/environment")
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
