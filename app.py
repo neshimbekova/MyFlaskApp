@@ -6,18 +6,16 @@ from wtforms import StringField, PasswordField, BooleanField
 from wtforms.validators import InputRequired, Email, Length
 from flask_bootstrap import Bootstrap
 from werkzeug.security import generate_password_hash, check_password_hash
-from passlib.hash import sha256_crypt
+#from passlib.hash import sha256_crypt
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from healthcheck import HealthCheck, EnvironmentDump
+
 
 app = Flask(__name__)
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://username:password@host/database'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://noor:Nurzhamal@165.227.110.208/noor'
-app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
+app.config['SECRET_KEY'] = 'secret_littlesnowflake<<>>kuku'
 bootstrap = Bootstrap(app)
 db = SQLAlchemy(app)
-health = HealthCheck(app, "/healthy")
-envdump = EnvironmentDump(app, "/environment")
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -25,53 +23,67 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(80), nullable=False)
 
+class LoginForm(FlaskForm):
+    username = StringField('username', validators=[InputRequired(), Length(min=4, max=15)])
+    password = PasswordField('password', validators=[InputRequired(), Length(min=8, max=80)])
+    remember = BooleanField('remember me')
+
 
 # Register Form Class
-class RegisterForm(Form):
-    name = StringField('Name', [validators.Length(min=1, max=50)])
-    username = StringField('Username', [validators.Length(min=4, max=25)])
-    email = StringField('Email', [validators.Length(min=6, max=50)])
-    password = PasswordField('Password', [
-        validators.DataRequired(),
-        validators.EqualTo('confirm', message='Passwords do not match')
-    ])
-    confirm = PasswordField('Confirm Password')
+# class RegisterForm(FlaskForm):
+#     name = StringField('Name', [validators.Length(min=1, max=50)])
+#     username = StringField('Username', [validators.Length(min=4, max=25)])
+#     email = StringField('Email', [validators.Length(min=6, max=50)])
+#     password = PasswordField('Password', [
+#         validators.DataRequired(),
+#         validators.EqualTo('confirm', message='Passwords do not match')])
+#     confirm = PasswordField('Confirm Password')
+class RegisterForm(FlaskForm):
+    email = StringField('email', validators=[InputRequired(), Email(message='Invalid email'), Length(max=50)])
+    username = StringField('username', validators=[InputRequired(), Length(min=4, max=15)])
+    password = StringField('password', validators=[InputRequired(), Length(min=8, max=80)])
+    remember = BooleanField('remember me')
 
+#HealthCheck
+@app.route('/healthy', methods=['GET'])
+def healthy():
+    return jsonify({'message': 'ok'})
 
-# User Register
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    form = RegisterForm(request.form)
-    if request.method == 'POST' and form.validate():
-        name = form.name.data
-        email = form.email.data
-        username = form.username.data
-        password = sha256_crypt.encrypt(str(form.password.data))
-
-        cur = mysql.connection.cursor()
-
-        cur.execute("INSERT INTO users(name, email, username, password) VALUES(%s, %s, %s, %s)", (name, email, username, password))
-
-        mysql.connection.commit()
-
-        cur.close()
-
-        flash('You are now registered and can log in', 'success')
-
-        return redirect(url_for('login'))
-    return render_template('register.html', form=form)
-
-
-app = Flask(__name__)
-
+#HomePage
 Articles = Articles()
-@app.route('/')
+@app.route('/', methods=['GET'])
 def index():
     return render_template('home.html')
 
-@app.route('/about')
+#AboutPage
+@app.route('/about', methods=['GET'])
 def about():
     return render_template('about.html')
+
+#SignUP_Page
+@app.route("/signup", methods=['GET','POST'])
+def signup():
+    form = RegisterForm()
+    if form.validate_on_submit():
+        new_user = User(username=form.username.data, email=form.email.data, password=form.password.data)
+        db.session.add(new_user)
+        db.session.commit()
+        return '<h1> New User Has been created! </h1>'
+    return render_template('signup.html', form=form)
+
+@app.route('/login')
+def login():
+    form = LoginForm()
+    return render_template('login.html', form=form)
+
+#Logout_Page
+@app.route('/logout', methods=['GET', 'POST'])
+@login_required
+def logout():
+    logout_user()
+    return render_template('home.html')
+
+
 
 @app.route('/articles')
 def articles():
@@ -83,4 +95,4 @@ def article(id):
     return render_template('article.html', id=id)
 
 if __name__ == '__main__':
-    app.run(port=5000, host='0.0.0.0')
+    app.run(port=5000, host='0.0.0.0', debug=True)
