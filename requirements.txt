@@ -25,7 +25,6 @@ PyMySQL==0.9.3
 python-dateutil==2.8.0
 python-jsonrpc-server==0.1.2
 python-language-server==0.25.0
-PyYAML==3.13
 rsa==3.4.2
 s3transfer==0.2.0
 six==1.12.0
